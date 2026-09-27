@@ -1,3 +1,9 @@
+from app.models.message import Message
+from app.models.room import ChatRoom
 from app.models.user import User
 
-__all__ = ["User"]
+__all__ = [
+    "User",
+    "ChatRoom",
+    "Message",
+]

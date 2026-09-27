@@ -1,37 +1,35 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
 
-# User Model
+# Chat Room Model
 
-class User(Base):
-    __tablename__ = "users"
+class ChatRoom(Base):
+    __tablename__ = "chat_rooms"
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
         index=True
     )
 
-    username: Mapped[str] = mapped_column(
-        String(50),
+    name: Mapped[str] = mapped_column(
+        String(100),
         unique=True,
         nullable=False,
         index=True
     )
 
-    email: Mapped[str] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         String(255),
-        unique=True,
-        nullable=False,
-        index=True
+        nullable=True
     )
 
-    password_hash: Mapped[str] = mapped_column(
-        String(255),
+    creator_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
         nullable=False
     )
 
@@ -41,12 +39,13 @@ class User(Base):
         nullable=False
     )
 
-    created_rooms = relationship(
-        "ChatRoom",
-        back_populates="creator"
+    creator = relationship(
+        "User",
+        back_populates="created_rooms"
     )
 
     messages = relationship(
         "Message",
-        back_populates="sender"
+        back_populates="room",
+        cascade="all, delete-orphan"
     )

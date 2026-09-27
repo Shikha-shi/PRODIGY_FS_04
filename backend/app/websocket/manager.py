@@ -5,7 +5,10 @@ from fastapi import WebSocket
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, list[WebSocket]] = {}
+        self.active_connections: dict[
+            int,
+            list[WebSocket]
+        ] = {}
 
 
     # Connect Client
@@ -17,10 +20,10 @@ class ConnectionManager:
     ):
         await websocket.accept()
 
-        if room_id not in self.active_connections:
-            self.active_connections[room_id] = []
-
-        self.active_connections[room_id].append(websocket)
+        self.active_connections.setdefault(
+            room_id,
+            []
+        ).append(websocket)
 
 
     # Disconnect Client
@@ -30,13 +33,17 @@ class ConnectionManager:
         room_id: int,
         websocket: WebSocket
     ):
-        if room_id not in self.active_connections:
+        connections = self.active_connections.get(
+            room_id
+        )
+
+        if not connections:
             return
 
-        if websocket in self.active_connections[room_id]:
-            self.active_connections[room_id].remove(websocket)
+        if websocket in connections:
+            connections.remove(websocket)
 
-        if not self.active_connections[room_id]:
+        if not connections:
             del self.active_connections[room_id]
 
 
@@ -45,7 +52,7 @@ class ConnectionManager:
     async def broadcast(
         self,
         room_id: int,
-        message: str
+        message: dict
     ):
         connections = self.active_connections.get(
             room_id,
@@ -53,7 +60,7 @@ class ConnectionManager:
         )
 
         for connection in connections:
-            await connection.send_text(message)
+            await connection.send_json(message)
 
 
 manager = ConnectionManager()
