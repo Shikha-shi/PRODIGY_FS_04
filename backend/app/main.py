@@ -1,8 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-
-from app.auth.dependencies import get_current_user
+import jwt
 from app.database import Base, SessionLocal, engine
 from app.models import Message, User
 from app.models.room import ChatRoom
@@ -76,29 +75,49 @@ async def websocket_endpoint(
     db: Session = SessionLocal()
 
     try:
+        token = websocket.query_params.get("token")
+
+        if not token:
+            await websocket.close(code=1008)
+            return
+
+        try:
+            payload = jwt.decode(
+                token,
+                settings.JWT_SECRET_KEY,
+                algorithms=[settings.JWT_ALGORITHM]
+            )
+
+            user_id = payload.get("sub")
+
+            if user_id is None:
+                await websocket.close(code=1008)
+                return
+
+            user = db.get(User, int(user_id))
+
+            if not user:
+                await websocket.close(code=1008)
+                return
+
+        except jwt.PyJWTError:
+            await websocket.close(code=1008)
+            return
+
         room = db.get(ChatRoom, room_id)
 
         if not room:
             await websocket.close(code=1008)
             return
 
-        await manager.connect(
-            room_id,
-            websocket
-        )
+        await manager.connect(room_id, websocket)
 
         while True:
             data = await websocket.receive_json()
 
-            user_id = data.get("user_id")
             content = data.get("content", "").strip()
 
-            if not user_id or not content:
-                continue
-
-            user = db.get(User, user_id)
-
-            if not user:
+            if not content:
                 continue
 
             message = Message(
@@ -124,10 +143,7 @@ async def websocket_endpoint(
             )
 
     except WebSocketDisconnect:
-        manager.disconnect(
-            room_id,
-            websocket
-        )
+        manager.disconnect(room_id, websocket)
 
     finally:
         db.close()

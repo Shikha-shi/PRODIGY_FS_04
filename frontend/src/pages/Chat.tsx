@@ -110,9 +110,8 @@ useEffect(() => {
     }
 
     const socket = new WebSocket(
-      `ws://localhost:8000/ws/rooms/${selectedRoom}`
-    );
-
+  `ws://localhost:8000/ws/rooms/${selectedRoom}?token=${token}`
+);
     socketRef.current = socket;
 
     socket.onopen = () => {
@@ -136,7 +135,7 @@ useEffect(() => {
     return () => {
       socket.close();
     };
-  }, [selectedRoom, user]);
+  }, [selectedRoom, user,token]);
 
 
   /* Send Message */
@@ -156,11 +155,10 @@ useEffect(() => {
     }
 
     socketRef.current.send(
-      JSON.stringify({
-        user_id: user.id,
-        content,
-      })
-    );
+  JSON.stringify({
+    content,
+  })
+);
 
     setMessage("");
   };
