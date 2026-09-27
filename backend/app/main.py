@@ -6,6 +6,9 @@ from app.database import Base, engine
 from app.models import User
 from app.routers.auth import router as auth_router
 from app.settings import settings
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+from app.websocket.manager import manager
 
 
 # Database Initialization
@@ -55,3 +58,30 @@ def health_check():
     return {
         "status": "healthy"
     }
+
+# WebSocket Chat
+
+@app.websocket("/ws/{room_id}")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    room_id: int
+):
+    await manager.connect(
+        room_id,
+        websocket
+    )
+
+    try:
+        while True:
+            message = await websocket.receive_text()
+
+            await manager.broadcast(
+                room_id,
+                message
+            )
+
+    except WebSocketDisconnect:
+        manager.disconnect(
+            room_id,
+            websocket
+        )

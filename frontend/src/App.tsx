@@ -13,6 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Chat from "./pages/Chat";
 
 
 /* Chirp Application */
@@ -46,6 +47,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/chat"
+  element={
+    <ProtectedRoute>
+      <Chat />
+    </ProtectedRoute>
+  }
+/>
 
         </Routes>
       </BrowserRouter>
