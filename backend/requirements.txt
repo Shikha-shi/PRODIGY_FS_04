@@ -6,3 +6,9 @@ sqlalchemy
 psycopg[binary]
 pydantic-settings
 python-dotenv
+
+# Authentication
+
+pwdlib[argon2]
+PyJWT
+email-validator

@@ -1,44 +1,103 @@
-/* Application Layout */
+/* Application */
 
 .app {
   min-height: 100vh;
+}
+
+
+/* Authentication Page */
+
+.auth-page {
+  min-height: 100vh;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   background: #0f172a;
   color: #f8fafc;
-  font-family: Arial, sans-serif;
 }
 
 
-/* Hero Section */
+/* Authentication Card */
 
-.hero {
-  text-align: center;
+.auth-card {
+  width: min(420px, 90%);
+
+  padding: 32px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  background: #1e293b;
+
+  border-radius: 16px;
 }
 
 
-/* Chirp Brand */
+/* Authentication Heading */
 
-.hero h1 {
+.auth-card h1 {
   margin: 0;
-  font-size: 64px;
+}
+
+
+/* Authentication Inputs */
+
+.auth-card input {
+  padding: 12px;
+
+  border: 1px solid #475569;
+  border-radius: 8px;
+
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+
+/* Authentication Button */
+
+.auth-card button,
+.dashboard button {
+  padding: 12px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #06b6d4;
+  color: #0f172a;
+
   font-weight: 700;
+
+  cursor: pointer;
 }
 
 
-/* Tagline */
+/* Error Message */
 
-.hero p {
-  margin: 16px 0 8px;
-  font-size: 20px;
-  color: #cbd5e1;
+.error {
+  padding: 10px;
+
+  border-radius: 8px;
+
+  background: #7f1d1d;
+  color: #fecaca;
 }
 
 
-/* Supporting Text */
+/* Dashboard */
 
-.hero span {
-  color: #64748b;
-  font-size: 14px;
+.dashboard {
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 16px;
+
+  background: #0f172a;
+  color: #f8fafc;
 }

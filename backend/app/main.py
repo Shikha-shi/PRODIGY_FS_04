@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth import security
 from app.database import Base, engine
 from app.models import User
+from app.routers.auth import router as auth_router
 from app.settings import settings
 
 
@@ -29,6 +31,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Authentication Routes
+
+app.include_router(auth_router)
 
 
 # Root Endpoint

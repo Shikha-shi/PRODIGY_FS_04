@@ -1,23 +1,55 @@
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+} from "react-router-dom";
+
 import "./App.css";
+
+import { AuthProvider } from "./context/AuthContext";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+
+import Dashboard from "./pages/Dashboard";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 
 /* Chirp Application */
 
 function App() {
   return (
-    <main className="app">
-      <section className="hero">
-        <h1>Chirp</h1>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
 
-        <p>
-          Real-time conversations, made simple.
-        </p>
+          <Route
+            path="/"
+            element={<Login />}
+          />
 
-        <span>
-          Connect. Chat. Chirp.
-        </span>
-      </section>
-    </main>
+          <Route
+            path="/login"
+            element={<Login />}
+          />
+
+          <Route
+            path="/register"
+            element={<Register />}
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
