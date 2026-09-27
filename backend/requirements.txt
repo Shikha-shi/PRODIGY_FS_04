@@ -1,0 +1,8 @@
+# Core Backend
+
+fastapi==0.141.1
+uvicorn[standard]
+sqlalchemy
+psycopg[binary]
+pydantic-settings
+python-dotenv
