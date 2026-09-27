@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -15,25 +16,30 @@ interface Message {
 }
 
 
+/* Chat Room */
+
+interface Room {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+
 /* Chat Page */
 
 function Chat() {
   const { user, token } = useAuth();
 
-  const [rooms, setRooms] = useState<
-    {
-      id: number;
-      name: string;
-      description: string | null;
-    }[]
-  >([]);
-
-  const [selectedRoom, setSelectedRoom] = useState<
-    number | null
-  >(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
+
+  const [roomName, setRoomName] = useState("");
+  const [roomDescription, setRoomDescription] = useState("");
+  const [showCreateRoom, setShowCreateRoom] = useState(false);
+
   const [connected, setConnected] = useState(false);
 
   const socketRef = useRef<WebSocket | null>(null);
@@ -41,47 +47,13 @@ function Chat() {
 
   /* Load Chat Rooms */
 
-  useEffect(() => {
+  const loadRooms = async () => {
     if (!token) {
       return;
     }
 
-    const loadRooms = async () => {
-      const response = await fetch(
-        "http://localhost:8000/rooms",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
-
-      setRooms(data);
-
-      if (data.length > 0) {
-        setSelectedRoom(data[0].id);
-      }
-    };
-
-    loadRooms();
-  }, [token]);
-
-  /* Load Room Messages */
-
-useEffect(() => {
-  if (!selectedRoom || !token) {
-    return;
-  }
-
-  const loadMessages = async () => {
     const response = await fetch(
-      `http://localhost:8000/rooms/${selectedRoom}/messages`,
+      "http://localhost:8000/rooms",
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -95,32 +67,113 @@ useEffect(() => {
 
     const data = await response.json();
 
-    setMessages(data);
+    setRooms(data);
+
+    if (data.length > 0 && !selectedRoom) {
+      setSelectedRoom(data[0].id);
+    }
   };
 
-  loadMessages();
-}, [selectedRoom, token]);
+
+  useEffect(() => {
+    loadRooms();
+  }, [token]);
+
+
+  /* Create Chat Room */
+
+  const createRoom = async (
+    event: FormEvent<HTMLFormElement>
+  ) => {
+    event.preventDefault();
+
+    if (!token || !roomName.trim()) {
+      return;
+    }
+
+    const response = await fetch(
+      "http://localhost:8000/rooms",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: roomName.trim(),
+          description: roomDescription.trim() || null,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const newRoom = await response.json();
+
+    setRooms((current) => [
+      newRoom,
+      ...current,
+    ]);
+
+    setSelectedRoom(newRoom.id);
+
+    setRoomName("");
+    setRoomDescription("");
+    setShowCreateRoom(false);
+  };
+
+
+  /* Load Room Messages */
+
+  useEffect(() => {
+    if (!selectedRoom || !token) {
+      return;
+    }
+
+    const loadMessages = async () => {
+      const response = await fetch(
+        `http://localhost:8000/rooms/${selectedRoom}/messages`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        return;
+      }
+
+      const data = await response.json();
+
+      setMessages(data);
+    };
+
+    loadMessages();
+  }, [selectedRoom, token]);
 
 
   /* WebSocket Connection */
 
   useEffect(() => {
-    if (!selectedRoom || !user) {
+    if (!selectedRoom || !user || !token) {
       return;
     }
 
     const socket = new WebSocket(
-  `ws://localhost:8000/ws/rooms/${selectedRoom}?token=${token}`
-);
+      `ws://localhost:8000/ws/rooms/${selectedRoom}?token=${token}`
+    );
+
     socketRef.current = socket;
 
     socket.onopen = () => {
-  setConnected(true);
-};
+      setConnected(true);
+    };
 
     socket.onmessage = (event) => {
-      const incomingMessage =
-        JSON.parse(event.data);
+      const incomingMessage = JSON.parse(event.data);
 
       setMessages((current) => [
         ...current,
@@ -135,7 +188,7 @@ useEffect(() => {
     return () => {
       socket.close();
     };
-  }, [selectedRoom, user,token]);
+  }, [selectedRoom, user, token]);
 
 
   /* Send Message */
@@ -143,7 +196,7 @@ useEffect(() => {
   const sendMessage = () => {
     const content = message.trim();
 
-    if (!content || !user) {
+    if (!content) {
       return;
     }
 
@@ -155,10 +208,10 @@ useEffect(() => {
     }
 
     socketRef.current.send(
-  JSON.stringify({
-    content,
-  })
-);
+      JSON.stringify({
+        content,
+      })
+    );
 
     setMessage("");
   };
@@ -178,6 +231,47 @@ useEffect(() => {
           <h1>Chirp</h1>
           <span>Public Rooms</span>
         </div>
+
+        <button
+          className="create-room-button"
+          onClick={() =>
+            setShowCreateRoom((current) => !current)
+          }
+        >
+          + Create Room
+        </button>
+
+
+        {showCreateRoom && (
+          <form
+            className="create-room-form"
+            onSubmit={createRoom}
+          >
+            <input
+              type="text"
+              value={roomName}
+              placeholder="Room name"
+              maxLength={100}
+              onChange={(event) =>
+                setRoomName(event.target.value)
+              }
+            />
+
+            <textarea
+              value={roomDescription}
+              placeholder="Description"
+              maxLength={255}
+              onChange={(event) =>
+                setRoomDescription(event.target.value)
+              }
+            />
+
+            <button type="submit">
+              Create
+            </button>
+          </form>
+        )}
+
 
         <div className="room-list">
 
@@ -230,6 +324,15 @@ useEffect(() => {
 
         <section className="messages">
 
+          {messages.length === 0 && (
+            <div className="empty-messages">
+              <h3>No messages yet</h3>
+              <p>
+                Start the conversation in this room.
+              </p>
+            </div>
+          )}
+
           {messages.map((item) => (
             <div
               key={item.id}
@@ -244,6 +347,15 @@ useEffect(() => {
               </strong>
 
               <p>{item.content}</p>
+
+              <small>
+                {new Date(
+                  item.created_at
+                ).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </small>
             </div>
           ))}
 
@@ -273,7 +385,7 @@ useEffect(() => {
 
           <button
             type="submit"
-            disabled={!connected}
+            disabled={!connected || !message.trim()}
           >
             Send
           </button>
