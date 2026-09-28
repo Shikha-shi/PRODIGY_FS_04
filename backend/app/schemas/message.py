@@ -10,5 +10,8 @@ class MessageResponse(BaseModel):
     content: str
     sender_id: int
     username: str
-    room_id: int
+    room_id: int | None = None
+    conversation_id: int | None = None
+    message_type: str = "text"
+    attachment_url: str | None = None
     created_at: datetime

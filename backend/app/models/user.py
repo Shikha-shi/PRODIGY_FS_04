@@ -50,3 +50,9 @@ class User(Base):
         "Message",
         back_populates="sender"
     )
+
+    conversation_members = relationship(
+        "ConversationMember",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

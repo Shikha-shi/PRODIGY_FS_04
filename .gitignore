@@ -1,24 +1,22 @@
-# Python virtual environments
+# Python
+__pycache__/
+*.py[cod]
 .venv/
 venv/
 
-# Environment variables
+# Environment
 .env
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-
-# macOS
-.DS_Store
-
-# VS Code
-.vscode/
 
 # Node
 node_modules/
 dist/
 
-# Build files
-*.log
+# Runtime uploads
+backend/uploads/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

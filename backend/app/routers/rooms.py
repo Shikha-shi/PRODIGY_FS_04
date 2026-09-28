@@ -1,17 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+)
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.database import get_db
+from app.models.message import Message
 from app.models.room import ChatRoom
 from app.models.user import User
-from app.schemas.room import RoomCreate, RoomResponse
-from app.models.message import Message
 from app.schemas.message import MessageResponse
+from app.schemas.room import RoomCreate, RoomResponse
 
-
-# Chat Room Router
 
 router = APIRouter(
     prefix="/rooms",
@@ -19,7 +22,7 @@ router = APIRouter(
 )
 
 
-# Create Chat Room
+# Create Room
 
 @router.post(
     "",
@@ -31,16 +34,14 @@ def create_room(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    existing_room = db.scalar(
+    if db.scalar(
         select(ChatRoom).where(
             ChatRoom.name == data.name
         )
-    )
-
-    if existing_room:
+    ):
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A room with this name already exists"
+            status_code=400,
+            detail="Room already exists"
         )
 
     room = ChatRoom(
@@ -56,24 +57,25 @@ def create_room(
     return room
 
 
-# List Chat Rooms
+# List Rooms
 
 @router.get(
     "",
     response_model=list[RoomResponse]
 )
-def get_rooms(
+def list_rooms(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     return db.scalars(
-        select(ChatRoom).order_by(
+        select(ChatRoom)
+        .order_by(
             ChatRoom.created_at.desc()
         )
     ).all()
 
 
-# Get Single Chat Room
+# Get Room
 
 @router.get(
     "/{room_id}",
@@ -84,15 +86,19 @@ def get_room(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    room = db.get(ChatRoom, room_id)
+    room = db.get(
+        ChatRoom,
+        room_id
+    )
 
     if not room:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Chat room not found"
         )
 
     return room
+
 
 # Room Message History
 
@@ -105,18 +111,23 @@ def get_room_messages(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    room = db.get(ChatRoom, room_id)
-
-    if not room:
+    if not db.get(
+        ChatRoom,
+        room_id
+    ):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=404,
             detail="Chat room not found"
         )
 
     messages = db.scalars(
         select(Message)
-        .where(Message.room_id == room_id)
-        .order_by(Message.created_at.asc())
+        .where(
+            Message.room_id == room_id
+        )
+        .order_by(
+            Message.created_at.asc()
+        )
     ).all()
 
     return [
@@ -126,6 +137,9 @@ def get_room_messages(
             sender_id=message.sender_id,
             username=message.sender.username,
             room_id=message.room_id,
+            conversation_id=None,
+            message_type="text",
+            attachment_url=None,
             created_at=message.created_at
         )
         for message in messages

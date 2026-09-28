@@ -1,65 +1,64 @@
 import {
-  BrowserRouter,
+  Navigate,
   Route,
   Routes,
 } from "react-router-dom";
 
-import "./App.css";
-
-import { AuthProvider } from "./context/AuthContext";
-
+import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Chat from "./pages/Chat";
 
 
-/* Chirp Application */
+export default function App() {
+  const { token } = useAuth();
 
-function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+    <Routes>
 
-          <Route
-            path="/"
-            element={<Login />}
-          />
+      <Route
+        path="/login"
+        element={
+          token
+            ? <Navigate to="/chat" replace />
+            : <Login />
+        }
+      />
 
-          <Route
-            path="/login"
-            element={<Login />}
-          />
+      <Route
+        path="/register"
+        element={
+          token
+            ? <Navigate to="/chat" replace />
+            : <Register />
+        }
+      />
 
-          <Route
-            path="/register"
-            element={<Register />}
-          />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <Chat />
+          </ProtectedRoute>
+        }
+      />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to={
+              token
+                ? "/chat"
+                : "/login"
             }
+            replace
           />
-          <Route
-  path="/chat"
-  element={
-    <ProtectedRoute>
-      <Chat />
-    </ProtectedRoute>
-  }
-/>
+        }
+      />
 
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    </Routes>
   );
 }
-
-export default App;
